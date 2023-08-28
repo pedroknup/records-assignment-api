@@ -14,15 +14,20 @@ export const processRecords = (records: ModelType[]) => {
 
     let validationNotes: string | undefined;
 
+    let isValid = true;
+
     if (existingRecord) {
+      isValid = false;
       validationNotes = 'Duplicate record';
     } else if (calculatedEndBalance !== endBalance) {
+      isValid = false;
       validationNotes =
         'End balance does not match calculated end balance';
     }
 
     processedRecords.push({
       ...record,
+      isValid,
       validationNotes,
     });
   }
@@ -44,6 +49,7 @@ export const readRecords = (csvFile: string): ModelType[] => {
       startBalance: parseFloat(columns[3]),
       mutation: parseFloat(columns[4]),
       endBalance: parseFloat(columns[5]),
+      isValid: false,
     };
     records.push(record);
   }

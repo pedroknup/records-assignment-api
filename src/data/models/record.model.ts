@@ -5,5 +5,6 @@ export type ModelType = {
   startBalance: number;
   mutation: number;
   endBalance: number;
+  isValid: boolean;
   validationNotes?: string;
 };
