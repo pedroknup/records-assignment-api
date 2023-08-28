@@ -7,7 +7,7 @@ export const processRecordsController = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, error: 'CSV file is required' });
     }
 
-    const csvFile: string = req.body;
+    const csvFile: string = req.body.trim();
     const mappedRecords = readRecords(csvFile);
     const records = processRecords(mappedRecords);
 
