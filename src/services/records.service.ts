@@ -3,7 +3,7 @@ import { xmlToJson } from '../utils/xml-to-json.util';
 import { xmlToRecord } from '../utils/xml-json-to-record.util';
 import { csvToRecord } from '../utils/csv-to-record.util';
 
-export const processRecordsFile = async (recordsFile: Express.Multer.File) => {
+export const processRecordsFile = async (recordsFile: Express.Multer.File, previouslyProcessedRecords?: ModelType[] ) => {
   const fileExtension = recordsFile.originalname.split('.').pop();
 
   let records: ModelType[] = [];
@@ -19,10 +19,35 @@ export const processRecordsFile = async (recordsFile: Express.Multer.File) => {
       throw new Error('File extension not supported');
   }
 
-  return processRecords(records);
+  return processRecords(records, previouslyProcessedRecords);
 };
 
-const processRecords = (records: ModelType[]) => {
+export const processRecordsFiles = async (
+  files:
+    | {
+        [fieldname: string]: Express.Multer.File[];
+      }
+    | Express.Multer.File[],
+  previouslyProcessedRecords?: ModelType[]
+): Promise<ModelType[]> => {
+  const uploadedFiles = Array.isArray(files) ? files : Object.values(files);
+
+  let processedRecords: ModelType[] = [];
+
+  for (const fileOrArray of uploadedFiles) {
+    const file = Array.isArray(fileOrArray) ? fileOrArray[0] : fileOrArray;
+
+    const _processedRecords = await processRecordsFile(file, [
+      ...processedRecords,
+      ...(previouslyProcessedRecords || []),
+    ]);
+    processedRecords.push(..._processedRecords);
+  }
+
+  return processedRecords;
+};
+ 
+const processRecords = (records: ModelType[], previouslyProcessedRecords?: ModelType[]) => {
   const processedRecords: ModelType[] = [];
 
   for (const record of records) {
@@ -31,7 +56,7 @@ const processRecords = (records: ModelType[]) => {
       (startBalance + mutation).toFixed(2)
     );
 
-    const existingRecord = processedRecords.find((_record) => {
+    const existingRecord = [...(previouslyProcessedRecords || []), ...processedRecords].find((_record) => {
       return _record.accountNumber === record.accountNumber;
     });
 
