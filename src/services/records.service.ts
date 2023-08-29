@@ -28,7 +28,6 @@ export const processRecordsFiles = async (
         [fieldname: string]: Express.Multer.File[];
       }
     | Express.Multer.File[],
-  previouslyProcessedRecords?: ModelType[]
 ): Promise<ModelType[]> => {
   const uploadedFiles = Array.isArray(files) ? files : Object.values(files);
 
@@ -37,10 +36,7 @@ export const processRecordsFiles = async (
   for (const fileOrArray of uploadedFiles) {
     const file = Array.isArray(fileOrArray) ? fileOrArray[0] : fileOrArray;
 
-    const _processedRecords = await processRecordsFile(file, [
-      ...processedRecords,
-      ...(previouslyProcessedRecords || []),
-    ]);
+    const _processedRecords = await processRecordsFile(file, processedRecords);
     processedRecords.push(..._processedRecords);
   }
 
@@ -57,11 +53,10 @@ const processRecords = (records: ModelType[], previouslyProcessedRecords?: Model
     );
 
     const existingRecord = [...(previouslyProcessedRecords || []), ...processedRecords].find((_record) => {
-      return _record.accountNumber === record.accountNumber;
+      return _record.reference === record.reference;
     });
 
     let validationNotes: string | undefined;
-
     let isValid = true;
 
     if (existingRecord) {
