@@ -1,8 +1,13 @@
 import express from 'express';
+import multer from 'multer';
 import { processRecordsController } from '../controllers/records.controller';
 
 const router = express.Router();
 
-router.post('/process-records', processRecordsController);
+const storage = multer.memoryStorage();
+export const upload = multer({ storage });
+
+
+router.post('/process-records', upload.single('file'), processRecordsController);
 
 export default router;

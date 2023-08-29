@@ -1,19 +1,28 @@
-import { processRecords, readRecords } from "../services/records.service";
 import { Request, Response } from 'express';
+import { processRecordsFile } from '../services/records.service';
 
 export const processRecordsController = async (req: Request, res: Response) => {
   try {
-    if (!req.body) {
-      return res.status(400).json({ success: false, error: 'CSV file is required' });
+    const file = req.file;
+    if (!file) {
+      return res
+        .status(400)
+        .json({ success: false, error: 'CSV file is required' });
     }
 
-    const csvFile: string = req.body.trim();
-    const mappedRecords = readRecords(csvFile);
-    const records = processRecords(mappedRecords);
+    const fileExtension = file.originalname.split('.').pop();
+    const supportedFileExtensions = ['csv', 'xml'];
+    if (!fileExtension || !supportedFileExtensions.includes(fileExtension)) {
+      return res.status(400).json({
+        success: false,
+        error: `File extension ${fileExtension} is not supported`,
+      });
+    }
 
+    const records = await processRecordsFile(file);
     res.status(200).json({ success: true, records });
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, error: 'CSV processing failed' });
   }
-}
+};

@@ -1,7 +1,30 @@
-import { ModelType } from "../data/models/record.model";
+import { ModelType } from '../data/models/record.model';
+import { xmlToJson } from '../utils/xml-to-json.util';
+import { xmlToRecord } from '../utils/xml-json-to-record.util';
+import { csvToRecord } from '../utils/csv-to-record.util';
 
-export const processRecords = (records: ModelType[]) => {
+export const processRecordsFile = async (recordsFile: Express.Multer.File) => {
+  const fileExtension = recordsFile.originalname.split('.').pop();
+
+  let records: ModelType[] = [];
+  switch (fileExtension) {
+    case 'csv':
+      records = await csvToRecord(recordsFile);
+      break;
+    case 'xml':
+      const xmlFileJson = await xmlToJson(recordsFile);
+      records = xmlToRecord(xmlFileJson.records.record);
+      break;
+    default:
+      throw new Error('File extension not supported');
+  }
+
+  return processRecords(records);
+};
+
+const processRecords = (records: ModelType[]) => {
   const processedRecords: ModelType[] = [];
+
   for (const record of records) {
     const { startBalance, mutation, endBalance } = record;
     const calculatedEndBalance = parseFloat(
@@ -21,8 +44,7 @@ export const processRecords = (records: ModelType[]) => {
       validationNotes = 'Duplicate record';
     } else if (calculatedEndBalance !== endBalance) {
       isValid = false;
-      validationNotes =
-        'End balance does not match calculated end balance';
+      validationNotes = 'End balance does not match calculated end balance';
     }
 
     processedRecords.push({
@@ -33,26 +55,4 @@ export const processRecords = (records: ModelType[]) => {
   }
 
   return processedRecords;
-};
-
-export const readRecords = (csvFile: string): ModelType[] => {
-  const records: ModelType[] = [];
-  const lines = csvFile.split('\n');
-
-  for (let i = 1; i < lines.length; i++) {
-    const line = lines[i];
-    const columns = line.split(',');
-    const record: ModelType = {
-      id: parseInt(columns[0]),
-      accountNumber: columns[1],
-      description: columns[2],
-      startBalance: parseFloat(columns[3]),
-      mutation: parseFloat(columns[4]),
-      endBalance: parseFloat(columns[5]),
-      isValid: false,
-    };
-    records.push(record);
-  }
-
-  return records;
 };
