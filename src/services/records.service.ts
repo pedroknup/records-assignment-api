@@ -7,7 +7,7 @@ const DUPLICATE_RECORD_NOTE = 'Duplicate record';
 const WRONG_BALANCE_NOTE = 'End balance does not match calculated end balance';
 
 
-export const processRecordsFile = async (recordsFile: Express.Multer.File) => {
+export const processRecordsFile = async (recordsFile: Express.Multer.File, previouslyProcessedRecords?: ModelType[] ) => {
   const fileExtension = recordsFile.originalname.split('.').pop();
 
   let records: ModelType[] = [];
@@ -23,7 +23,7 @@ export const processRecordsFile = async (recordsFile: Express.Multer.File) => {
       throw new Error('File extension not supported');
   }
 
-  return processRecords(records);
+  return processRecords(records, previouslyProcessedRecords);
 };
 
 export const processRecordsFiles = async (
@@ -40,14 +40,14 @@ export const processRecordsFiles = async (
   for (const fileOrArray of uploadedFiles) {
     const file = Array.isArray(fileOrArray) ? fileOrArray[0] : fileOrArray;
 
-    const _processedRecords = await processRecordsFile(file);
+    const _processedRecords = await processRecordsFile(file, processedRecords);
     processedRecords.push(..._processedRecords);
   }
 
   return processedRecords;
 };
  
-const processRecords = (records: ModelType[]) => {
+const processRecords = (records: ModelType[], previouslyProcessedRecords?: ModelType[]) => {
   const processedRecords: ModelType[] = [];
 
   for (const record of records) {
@@ -56,7 +56,8 @@ const processRecords = (records: ModelType[]) => {
       (startBalance + mutation).toFixed(2)
       );
       
-    const duplicateRecordIndex = processedRecords?.findIndex(
+    const allProcessedRecords = [...processedRecords, ...(previouslyProcessedRecords || [])]
+    const duplicateRecordIndex = allProcessedRecords?.findIndex(
       (_record) => _record.reference === reference
     );
     const recordReferenceExists = duplicateRecordIndex !== -1;
