@@ -23,5 +23,8 @@
   "devDependencies": {
     "@types/cors": "^2.8.13",
     "@types/xml2js": "^0.4.11"
+  },
+  "engines": {
+    "node": "16.x"
   }
 }
