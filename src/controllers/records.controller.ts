@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { processRecordsFile, processRecordsFiles } from '../services/records.service';
+import { processRecordsFiles } from '../services/records.service';
 import { validateFileExtensions } from '../utils/validate-file-extensions.util';
 
 export const processRecordsController = async (req: Request, res: Response) => {

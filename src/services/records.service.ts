@@ -7,7 +7,7 @@ const DUPLICATE_RECORD_NOTE = 'Duplicate record';
 const WRONG_BALANCE_NOTE = 'End balance does not match calculated end balance';
 
 
-export const processRecordsFile = async (recordsFile: Express.Multer.File, previouslyProcessedRecords?: ModelType[] ) => {
+export const readRecordsFile = async (recordsFile: Express.Multer.File) => {
   const fileExtension = recordsFile.originalname.split('.').pop();
 
   let records: ModelType[] = [];
@@ -23,7 +23,7 @@ export const processRecordsFile = async (recordsFile: Express.Multer.File, previ
       throw new Error('File extension not supported');
   }
 
-  return processRecords(records, previouslyProcessedRecords);
+  return records;
 };
 
 export const processRecordsFiles = async (
@@ -35,19 +35,19 @@ export const processRecordsFiles = async (
 ): Promise<ModelType[]> => {
   const uploadedFiles = Array.isArray(files) ? files : Object.values(files);
 
-  let processedRecords: ModelType[] = [];
+  let records: ModelType[] = [];
 
   for (const fileOrArray of uploadedFiles) {
     const file = Array.isArray(fileOrArray) ? fileOrArray[0] : fileOrArray;
 
-    const _processedRecords = await processRecordsFile(file, processedRecords);
-    processedRecords.push(..._processedRecords);
+    const fileRecords = await readRecordsFile(file);
+    records.push(...fileRecords);
   }
 
-  return processedRecords;
+  return processRecords(records);
 };
  
-const processRecords = (records: ModelType[], previouslyProcessedRecords?: ModelType[]) => {
+const processRecords = (records: ModelType[]) => {
   const processedRecords: ModelType[] = [];
 
   for (const record of records) {
@@ -56,8 +56,7 @@ const processRecords = (records: ModelType[], previouslyProcessedRecords?: Model
       (startBalance + mutation).toFixed(2)
       );
       
-    const allProcessedRecords = [...processedRecords, ...(previouslyProcessedRecords || [])]
-    const duplicateRecordIndex = allProcessedRecords?.findIndex(
+    const duplicateRecordIndex = processedRecords?.findIndex(
       (_record) => _record.reference === reference
     );
     const recordReferenceExists = duplicateRecordIndex !== -1;
